@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Predict HDI{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+
+    <div class="text-center mb-4">
+      <h1 class="fw-bold">Human Development Index Predictor</h1>
+      <p class="text-muted">
+        Estimate a country's HDI classification (Very High / High / Medium / Low)
+        from life expectancy, education, and income indicators.
+      </p>
+    </div>
+
+    {% if not model_ready %}
+    <div class="alert alert-danger">
+      <strong>Model not trained yet.</strong> Run the following before using the app:
+      <pre class="mb-0 mt-2"><code>python data/generate_dataset.py
+python model/train_model.py</code></pre>
+    </div>
+    {% endif %}
+
+    <div class="card shadow-sm form-card">
+      <div class="card-body p-4">
+        <form action="{{ url_for('predict') }}" method="POST" class="row g-3" id="hdiForm">
+
+          <div class="col-md-6">
+            <label class="form-label">Life Expectancy at Birth (years)</label>
+            <input type="number" step="0.1" min="0" max="100" name="life_expectancy"
+                   class="form-control" placeholder="e.g. 78.5" required>
+            <div class="form-text">Typical range: 45 – 85 years</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">GNI per Capita (PPP $)</label>
+            <input type="number" step="1" min="1" max="200000" name="gni_per_capita"
+                   class="form-control" placeholder="e.g. 25000" required>
+            <div class="form-text">Typical range: $500 – $80,000</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Mean Years of Schooling</label>
+            <input type="number" step="0.1" min="0" max="20" name="mean_years_schooling"
+                   class="form-control" placeholder="e.g. 9.5" required>
+            <div class="form-text">Adults aged 25+, typical range: 0 – 15</div>
+          </div>
+
+          <div class="col-md-6">
+            <label class="form-label">Expected Years of Schooling</label>
+            <input type="number" step="0.1" min="0" max="25" name="expected_years_schooling"
+                   class="form-control" placeholder="e.g. 13.2" required>
+            <div class="form-text">Typical range: 0 – 18</div>
+          </div>
+
+          <div class="col-12 d-flex gap-2 mt-4">
+            <button type="submit" class="btn btn-primary flex-grow-1" {% if not model_ready %}disabled{% endif %}>
+              Predict HDI
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="fillVeryHigh">Very High example</button>
+            <button type="button" class="btn btn-outline-secondary" id="fillMedium">Medium example</button>
+            <button type="button" class="btn btn-outline-secondary" id="fillLow">Low example</button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-4 small text-muted">
+      <p><strong>Scenario reference:</strong></p>
+      <ul>
+        <li><strong>Very High:</strong> long life expectancy, strong schooling, high GNI → e.g. Norway-like values.</li>
+        <li><strong>Medium:</strong> moderate values across all three dimensions → emerging economy.</li>
+        <li><strong>Low:</strong> low life expectancy, limited education access, low GNI → intervention priority.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

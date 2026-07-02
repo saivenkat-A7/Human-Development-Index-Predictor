@@ -1,0 +1,82 @@
+# =============================================================================
+# render.yaml — Render Blueprint for HDI Predictor
+# =============================================================================
+# Application : Human Development Index (HDI) Predictor
+# Tech Stack  : Python 3.11 · Flask 3.0 · Gunicorn · scikit-learn · Matplotlib
+# Author note : Pre-trained model artifacts (.pkl files) are committed to the
+#               repo. The build step regenerates the dataset + retrains the
+#               model so the deployment is always self-contained and fresh.
+# =============================================================================
+
+services:
+  # ---------------------------------------------------------------------------
+  # Web Service — Flask + Gunicorn (the main public-facing application)
+  # ---------------------------------------------------------------------------
+  - type: web
+    name: hdi-predictor
+    runtime: python
+    region: oregon          # US-West (Oregon) — Render's default free-tier region.
+                            # Change to "frankfurt" or "singapore" if your users
+                            # are primarily in EU or Asia-Pacific.
+    plan: free              # Upgrade to "starter" ($7/mo) for always-on uptime
+                            # (free tier sleeps after 15 min of inactivity).
+
+    # ── Source & Build ───────────────────────────────────────────────────────
+    buildCommand: |
+      pip install --upgrade pip &&
+      pip install -r requirements.txt &&
+      python data/generate_dataset.py &&
+      python model/train_model.py
+
+    # ── Start ────────────────────────────────────────────────────────────────
+    # Gunicorn is already in requirements.txt.
+    # Workers = 2 × CPU + 1 (Render free = 0.1 vCPU shared; 2 workers is safe).
+    startCommand: gunicorn app:app --bind 0.0.0.0:$PORT --workers 2 --timeout 120
+
+    # ── Health Check ─────────────────────────────────────────────────────────
+    healthCheckPath: /
+
+    # ── Auto-Deploy ──────────────────────────────────────────────────────────
+    autoDeploy: true        # Redeploy automatically on every git push to the
+                            # connected branch (default: main / master).
+
+    # ── Environment Variables ─────────────────────────────────────────────────
+    # Render injects $PORT automatically; do NOT hardcode 5000 in startCommand.
+    # Add all sensitive values in the Render dashboard → Environment tab, or
+    # via a Render Secret Group so they are never committed to the repo.
+    envVars:
+      # Flask secret key — MUST be changed to a strong random string.
+      # Generate with: python -c "import secrets; print(secrets.token_hex(32))"
+      - key: SECRET_KEY
+        generateValue: true   # Render auto-generates a secure random value.
+
+      # Flask runtime mode: "production" disables the debugger and reloader.
+      - key: FLASK_ENV
+        value: production
+
+      - key: FLASK_DEBUG
+        value: "0"
+
+      # Python output is not buffered — logs appear immediately in Render logs.
+      - key: PYTHONUNBUFFERED
+        value: "1"
+
+      # (Optional) Log level for Gunicorn. Set to "warning" in production.
+      - key: LOG_LEVEL
+        value: warning
+
+      # (Optional) Sentry DSN for error tracking.
+      # Add the actual value in the Render dashboard; never commit it here.
+      # - key: SENTRY_DSN
+      #   sync: false   # "sync: false" means you set the value manually in the UI.
+
+    # ── Disk (Ephemeral Storage Note) ────────────────────────────────────────
+    # Render's free/starter plans use ephemeral disks. Because the model .pkl
+    # files are committed to the repo AND regenerated at build time, they are
+    # baked into the deployment image — no persistent disk is needed.
+    #
+    # If you later move to on-demand retraining triggered at runtime, add:
+    #   disk:
+    #     name: hdi-model-storage
+    #     mountPath: /app/model
+    #     sizeGB: 1

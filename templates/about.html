@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}About{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-8">
+    <h2 class="fw-bold mb-3">About This Project</h2>
+    <p>
+      The Human Development Index (HDI) is a composite statistic of life expectancy, education,
+      and per-capita income indicators, used by the UNDP to rank countries into four tiers of
+      human development: <strong>Very High, High, Medium, and Low</strong>.
+    </p>
+
+    <h5 class="mt-4">Indicators Used</h5>
+    <ul>
+      <li><strong>Life Expectancy at Birth</strong> — health dimension</li>
+      <li><strong>Mean Years of Schooling</strong> &amp; <strong>Expected Years of Schooling</strong> — education dimension</li>
+      <li><strong>GNI per Capita (PPP $)</strong> — standard of living dimension</li>
+    </ul>
+
+    <h5 class="mt-4">How Predictions Are Made</h5>
+    <p>
+      Two models are trained on a labeled dataset built from the official UNDP HDI formula
+      (geometric mean of the three normalized dimension indices):
+    </p>
+    <ul>
+      <li>A <strong>Random Forest Classifier</strong> predicts the HDI tier (Very High / High / Medium / Low).</li>
+      <li>A <strong>Random Forest Regressor</strong> predicts the continuous HDI score (0–1).</li>
+    </ul>
+    <p>
+      For transparency, every prediction is shown alongside the exact official formula result,
+      so you can compare the ML model's output to the ground-truth calculation.
+    </p>
+
+    <h5 class="mt-4">Tech Stack</h5>
+    <p>Python, Flask, scikit-learn, Pandas, NumPy, Matplotlib, Seaborn, Bootstrap 5.</p>
+
+    <a href="{{ url_for('home') }}" class="btn btn-primary mt-3">Back to Predictor</a>
+  </div>
+</div>
+{% endblock %}
